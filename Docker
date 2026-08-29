@@ -1,0 +1,20 @@
+# Build Stage
+FROM maven:3.9-eclipse-temurin-11 AS builder
+
+WORKDIR /Doctor-Appointment-Scheduler
+
+COPY pom.xml .
+COPY src ./src
+
+RUN mvn -B clean package
+
+# Runtime Stage
+FROM eclipse-temurin:11-jre
+
+WORKDIR /spring-boot-app
+
+COPY --from=builder /spring-boot-app/target/*.jar Appointment.jar
+
+EXPOSE 8080
+
+ENTRYPOINT ["java","-jar","Appointment.jar"]
