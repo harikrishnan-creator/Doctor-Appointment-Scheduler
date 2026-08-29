@@ -15,7 +15,11 @@
 	<description>Spring Boot Appointment Project</description>
 	<properties>
 		<java.version>11</java.version>
+		<sonar.projectKey>springboot-app</sonar.projectKey>
+        <sonar.organization>harikrishnan-creator</sonar.organization>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 	</properties>
+	
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -25,6 +29,21 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-thymeleaf</artifactId>
 		</dependency>
+
+		      <!-- Update Tomcat -->
+<dependency>
+  <groupId>org.apache.tomcat.embed</groupId>
+  <artifactId>tomcat-embed-core</artifactId>
+  <version>10.1.55</version> <!-- or 11.0.22 -->
+</dependency>
+
+<!-- Update Jackson -->
+<dependency>
+  <groupId>com.fasterxml.jackson.core</groupId>
+  <artifactId>jackson-databind</artifactId>
+  <version>2.21.4</version>
+</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
@@ -53,7 +72,35 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+			<plugin>
+    <groupId>org.jacoco</groupId>
+    <artifactId>jacoco-maven-plugin</artifactId>
+    <version>0.8.12</version>
+    <executions>
+        <execution>
+            <goals>
+                <goal>prepare-agent</goal>
+            </goals>
+        </execution>
+        <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+                <goal>report</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
 		</plugins>
 	</build>
-
+<distributionManagement>
+  <repository>
+    <id>jfrog-releases</id>
+    <url>http://3.18.194.203:8082/artifactory/libs-release</url>
+  </repository>
+  <snapshotRepository>
+    <id>jfrog-snapshots</id>
+    <url>http://3.18.194.203:8082/artifactory/libs-snapshot</url>
+  </snapshotRepository>
+</distributionManagement>
 </project>
