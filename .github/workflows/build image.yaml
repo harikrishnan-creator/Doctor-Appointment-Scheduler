@@ -1,0 +1,76 @@
+name: build image
+
+on:
+  workflow_dispatch: 
+
+env:
+  AWS_REGION: us-east-2
+  ECR_REPOSITORY: my-ecr-repo
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Maven Build & Test
+        run: mvn clean verify
+
+      - name: SonarQube Scan
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          mvn sonar:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.token=$SONAR_TOKEN -X
+
+            
+      - name: Quality Gate Check
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        with:
+          scanMetadataReportFile: target/sonar/report-task.txt
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+    
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+          
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker Image
+        run: |
+          docker build -t my-ecr-repo:latest -f Docker .
+
+      - name: Tag image for ECR
+        run: |
+         docker tag $ECR_REPOSITORY:latest 675344694125.dkr.ecr.us-east-2.amazonaws.com/$ECR_REPOSITORY:latest
+
+      - name: Push image to ECR
+        run: |
+         docker push 675344694125.dkr.ecr.us-east-2.amazonaws.com/$ECR_REPOSITORY:latest
+
+      - name: Move build to S3      
+        run: |
+          aws s3 cp target/employee-service-1.0.0.jar s3://mvn-artifact/maven-snapshots/
+
+      - name: Cleanup Target Folder     
+        run: |
+          rm -rf target 
