@@ -19,7 +19,7 @@
     <description>Spring Boot Appointment Project</description>
 
     <properties>
-        <java.version>11</java.version>
+        <java.version>25</java.version>
         <!-- SonarQube properties -->
         <sonar.projectKey>springboot-app</sonar.projectKey>
         <sonar.organization>harikrishnan-creator</sonar.organization>
