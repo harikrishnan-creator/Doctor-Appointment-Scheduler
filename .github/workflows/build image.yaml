@@ -75,5 +75,5 @@ jobs:
 
       - name: Move build to S3      
         run: |
-          aws s3 cp target/employee-service-1.0.0.jar s3://mvn-artifact/maven-snapshots/
+          aws s3 cp target/Appointment.jar-1.0.0.jar s3://mvn-artifact/maven-snapshots/
 
