@@ -13,7 +13,7 @@ FROM eclipse-temurin:11-jre
 
 WORKDIR /spring-boot-app
 
-COPY --from=builder /spring-boot-app/target/*.jar Appointment.jar
+COPY --from=builder /Doctor-Appointment-Scheduler/target/*.jar Appointment.jar
 
 EXPOSE 8080
 
