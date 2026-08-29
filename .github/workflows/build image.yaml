@@ -71,6 +71,3 @@ jobs:
         run: |
           aws s3 cp target/employee-service-1.0.0.jar s3://mvn-artifact/maven-snapshots/
 
-      - name: Cleanup Target Folder     
-        run: |
-          rm -rf target 
