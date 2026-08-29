@@ -121,12 +121,14 @@
     <!-- JFrog Artifactory distribution management -->
     <distributionManagement>
         <repository>
-            <id>jfrog-releases</id>
-            <url>http://3.18.194.203:8082/artifactory/libs-release</url>
+        <id>central</id>
+        <name>ip-172-31-39-222-releases</name>
+        <url>http://3.18.194.203:8081/artifactory/libs-release</url>
         </repository>
         <snapshotRepository>
-            <id>jfrog-snapshots</id>
-            <url>http://3.18.194.203:8082/artifactory/libs-snapshot</url>
-        </snapshotRepository>
+        <id>snapshots</id>
+        <name>ip-172-31-39-222-snapshots</name>
+        <url>http://3.18.194.203:8081/artifactory/libs-snapshot</url>
+    </snapshotRepository>
     </distributionManagement>
 </project>
