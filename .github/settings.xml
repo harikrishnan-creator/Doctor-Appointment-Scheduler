@@ -2,13 +2,13 @@
   <servers>
     <server>
       <id>jfrog-releases</id>
-      <username>${env.JFROG_USER}</username>
-      <password>${env.JFROG_PASSWORD}</password>
+      <username>${var.JFROG_USER}</username>
+      <password>${var.JFROG_PASSWORD}</password>
     </server>
     <server>
       <id>jfrog-snapshots</id>
-      <username>${env.JFROG_USER}</username>
-      <password>${env.JFROG_PASSWORD}</password>
+      <username>${var.JFROG_USER}</username>
+      <password>${var.JFROG_PASSWORD}</password>
     </server>
   </servers>
 </settings>
