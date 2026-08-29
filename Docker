@@ -1,5 +1,5 @@
 # Build Stage
-FROM maven:3.9-eclipse-temurin-25 AS builder
+FROM maven:3.9-eclipse-temurin-17 AS builder
 
 WORKDIR /Doctor-Appointment-Scheduler
 
@@ -9,7 +9,7 @@ COPY src ./src
 RUN mvn -B clean package
 
 # Runtime Stage
-FROM eclipse-temurin:25-jre
+FROM eclipse-temurin:17-jre
 
 WORKDIR /spring-boot-app
 
