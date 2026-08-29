@@ -78,9 +78,7 @@ jobs:
 #         aws s3 cp target/Appointment.jar-1.0.0.jar s3://mvn-artifact/maven-snapshots/
 
       - name: Deploy to JFrog
-        run: mvn deploy -DskipTests
-        env:
-          JFROG_USER: ${{ secrets.JFROG_USER }}
-          JFROG_PASSWORD: ${{ secrets.JFROG_PASSWORD }}
+        run: mvn deploy --settings .github/maven-settings.xml
+      
           
 
