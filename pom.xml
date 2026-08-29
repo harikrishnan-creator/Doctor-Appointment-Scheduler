@@ -19,7 +19,7 @@
     <description>Spring Boot Appointment Project</description>
 
     <properties>
-        <java.version>25</java.version>
+        <java.version>17</java.version>
         <!-- SonarQube properties -->
         <sonar.projectKey>springboot-app</sonar.projectKey>
         <sonar.organization>harikrishnan-creator</sonar.organization>
@@ -82,6 +82,9 @@
                 <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>
                 <version>3.9.1.2184</version>
+                <configuration>
+                 <release>17</release>
+                </configuration>
             </plugin>
 
             <!-- JaCoCo for code coverage -->
