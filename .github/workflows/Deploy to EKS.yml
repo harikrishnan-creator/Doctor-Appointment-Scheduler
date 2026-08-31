@@ -57,11 +57,11 @@ jobs:
         run: |
           IMAGE_URI=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
 
-          sed -i "s|IMAGE_PLACEHOLDER|$IMAGE_URI|g" k8-manifest.yaml
+          sed -i "s|IMAGE_PLACEHOLDER|$IMAGE_URI|g" K8-manifest.yml
 
       - name: Deploy to EKS
         run: |
-          kubectl apply -f k8-manifest.yaml
+          kubectl apply -f K8-manifest.yml
 
       - name: Verify Deployment
         run: |
