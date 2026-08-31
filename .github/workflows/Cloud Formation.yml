@@ -1,0 +1,146 @@
+name: Deploy stack
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "CloudFormation Action"
+        required: true
+        type: choice
+        options:
+          - create-update
+          - delete
+
+      stack_name:
+        description: "CloudFormation Stack Name"
+        required: true
+        default: "myapp-stack"
+
+      template_file:
+        description: "Path to CloudFormation YAML"
+        required: true
+        default: "infrastructure/stack.yaml"
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  cloudformation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        if: github.event.inputs.action == 'create-update'
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      #################################################
+      # VALIDATE TEMPLATE
+      #################################################
+
+      - name: Install CFN Lint
+        if: github.event.inputs.action == 'create-update'
+        run: |
+          pip install cfn-lint
+
+      - name: Lint Template
+        if: github.event.inputs.action == 'create-update'
+        run: |
+          cfn-lint ${{ github.event.inputs.template_file }}
+
+      - name: Validate Template
+        if: github.event.inputs.action == 'create-update'
+        run: |
+          aws cloudformation validate-template \
+            --template-body file://${{ github.event.inputs.template_file }}
+
+      #################################################
+      # CHECK STACK EXISTENCE
+      #################################################
+
+      - name: Check Stack Exists
+        if: github.event.inputs.action == 'create-update'
+        id: stack-check
+        run: |
+          if aws cloudformation describe-stacks \
+             --stack-name "${{ github.event.inputs.stack_name }}" \
+             >/dev/null 2>&1; then
+             echo "exists=true" >> $GITHUB_OUTPUT
+          else
+             echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      #################################################
+      # CREATE STACK
+      #################################################
+
+      - name: Create Stack
+        if: github.event.inputs.action == 'create-update' && steps.stack-check.outputs.exists == 'false'
+        run: |
+          echo "Creating stack..."
+
+          aws cloudformation create-stack \
+            --stack-name "${{ github.event.inputs.stack_name }}" \
+            --template-body file://${{ github.event.inputs.template_file }} \
+            --capabilities CAPABILITY_NAMED_IAM
+
+          aws cloudformation wait stack-create-complete \
+            --stack-name "${{ github.event.inputs.stack_name }}"
+
+      #################################################
+      # UPDATE STACK
+      #################################################
+
+      - name: Update Stack
+        if: github.event.inputs.action == 'create-update' && steps.stack-check.outputs.exists == 'true'
+        run: |
+          echo "Updating stack..."
+
+          UPDATE_OUTPUT=$(aws cloudformation update-stack \
+            --stack-name "${{ github.event.inputs.stack_name }}" \
+            --template-body file://${{ github.event.inputs.template_file }} \
+            --capabilities CAPABILITY_NAMED_IAM 2>&1) || true
+
+          echo "$UPDATE_OUTPUT"
+
+          if echo "$UPDATE_OUTPUT" | grep -q "No updates are to be performed"; then
+            echo "No changes detected."
+            exit 0
+          fi
+
+          aws cloudformation wait stack-update-complete \
+            --stack-name "${{ github.event.inputs.stack_name }}"
+
+      #################################################
+      # DISPLAY OUTPUTS
+      #################################################
+
+      - name: Display Stack Outputs
+        if: github.event.inputs.action == 'create-update'
+        run: |
+          aws cloudformation describe-stacks \
+            --stack-name "${{ github.event.inputs.stack_name }}" \
+            --query "Stacks[0].Outputs"
+
+      #################################################
+      # DELETE STACK
+      #################################################
+
+      - name: Delete Stack
+        if: github.event.inputs.action == 'delete'
+        run: |
+          echo "Deleting stack..."
+
+          aws cloudformation delete-stack \
+            --stack-name "${{ github.event.inputs.stack_name }}"
+
+          aws cloudformation wait stack-delete-complete \
+            --stack-name "${{ github.event.inputs.stack_name }}"
+
+          echo "Stack deleted successfully."
