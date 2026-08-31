@@ -1,100 +1,66 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Production EKS Cluster with VPC, Public/Private Subnets and Managed Node Group
+Description: EKS Cluster with VPC and Managed Node Group
 
 Resources:
 
-  # ==========================================================
-  # VPC
-  # ==========================================================
   VPC:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: 10.0.0.0/16
       EnableDnsHostnames: true
       EnableDnsSupport: true
-      Tags:
-        - Key: Name
-          Value: eks-vpc
 
-  # ==========================================================
-  # INTERNET GATEWAY
-  # ==========================================================
   InternetGateway:
     Type: AWS::EC2::InternetGateway
 
-  AttachGateway:
+  VPCGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
       VpcId: !Ref VPC
       InternetGatewayId: !Ref InternetGateway
 
-  # ==========================================================
-  # PUBLIC SUBNETS
-  # ==========================================================
   PublicSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      AvailabilityZone: !Select [0, !GetAZs '']
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs
+          Ref: AWS::Region
       CidrBlock: 10.0.1.0/24
       MapPublicIpOnLaunch: true
-      Tags:
-        - Key: Name
-          Value: PublicSubnet1
-        - Key: kubernetes.io/role/elb
-          Value: "1"
-        - Key: kubernetes.io/cluster/my-eks-cluster
-          Value: shared
 
   PublicSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      AvailabilityZone: !Select [1, !GetAZs '']
+      AvailabilityZone: !Select
+        - 1
+        - !GetAZs
+          Ref: AWS::Region
       CidrBlock: 10.0.2.0/24
       MapPublicIpOnLaunch: true
-      Tags:
-        - Key: Name
-          Value: PublicSubnet2
-        - Key: kubernetes.io/role/elb
-          Value: "1"
-        - Key: kubernetes.io/cluster/my-eks-cluster
-          Value: shared
 
-  # ==========================================================
-  # PRIVATE SUBNETS
-  # ==========================================================
   PrivateSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      AvailabilityZone: !Select [0, !GetAZs '']
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs
+          Ref: AWS::Region
       CidrBlock: 10.0.3.0/24
-      Tags:
-        - Key: Name
-          Value: PrivateSubnet1
-        - Key: kubernetes.io/role/internal-elb
-          Value: "1"
-        - Key: kubernetes.io/cluster/my-eks-cluster
-          Value: shared
 
   PrivateSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      AvailabilityZone: !Select [1, !GetAZs '']
+      AvailabilityZone: !Select
+        - 1
+        - !GetAZs
+          Ref: AWS::Region
       CidrBlock: 10.0.4.0/24
-      Tags:
-        - Key: Name
-          Value: PrivateSubnet2
-        - Key: kubernetes.io/role/internal-elb
-          Value: "1"
-        - Key: kubernetes.io/cluster/my-eks-cluster
-          Value: shared
 
-  # ==========================================================
-  # PUBLIC ROUTING
-  # ==========================================================
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -102,45 +68,36 @@ Resources:
 
   PublicRoute:
     Type: AWS::EC2::Route
-    DependsOn: AttachGateway
+    DependsOn: VPCGatewayAttachment
     Properties:
       RouteTableId: !Ref PublicRouteTable
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InternetGateway
 
-  PublicSubnet1Association:
+  PublicSubnet1RouteAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PublicRouteTable
       SubnetId: !Ref PublicSubnet1
 
-  PublicSubnet2Association:
+  PublicSubnet2RouteAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PublicRouteTable
       SubnetId: !Ref PublicSubnet2
 
-  # ==========================================================
-  # NAT GATEWAY
-  # ==========================================================
-  NatEIP:
+  NatEip:
     Type: AWS::EC2::EIP
-    DependsOn: AttachGateway
+    DependsOn: VPCGatewayAttachment
     Properties:
       Domain: vpc
 
   NatGateway:
     Type: AWS::EC2::NatGateway
     Properties:
-      AllocationId: !GetAtt NatEIP.AllocationId
+      AllocationId: !GetAtt NatEip.AllocationId
       SubnetId: !Ref PublicSubnet1
-      Tags:
-        - Key: Name
-          Value: eks-nat-gateway
 
-  # ==========================================================
-  # PRIVATE ROUTING
-  # ==========================================================
   PrivateRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -153,31 +110,64 @@ Resources:
       DestinationCidrBlock: 0.0.0.0/0
       NatGatewayId: !Ref NatGateway
 
-  PrivateSubnet1Association:
+  PrivateSubnet1RouteAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PrivateRouteTable
       SubnetId: !Ref PrivateSubnet1
 
-  PrivateSubnet2Association:
+  PrivateSubnet2RouteAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PrivateRouteTable
       SubnetId: !Ref PrivateSubnet2
 
-  # ==========================================================
-  # EKS CLUSTER
-  # ==========================================================
   EKSCluster:
     Type: AWS::EKS::Cluster
     Properties:
       Name: my-eks-cluster
       Version: "1.31"
       RoleArn: arn:aws:iam::675344694125:role/eks-node-group-role
-
       ResourcesVpcConfig:
         EndpointPublicAccess: true
         EndpointPrivateAccess: true
         SubnetIds:
           - !Ref PublicSubnet1
-          - !Ref 
+          - !Ref PublicSubnet2
+          - !Ref PrivateSubnet1
+          - !Ref PrivateSubnet2
+
+  EKSNodeGroup:
+    Type: AWS::EKS::Nodegroup
+    Properties:
+      ClusterName: !Ref EKSCluster
+      NodeRole: arn:aws:iam::675344694125:role/eks-node-group-role
+
+      Subnets:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+
+      ScalingConfig:
+        MinSize: 2
+        DesiredSize: 2
+        MaxSize: 5
+
+      InstanceTypes:
+        - t3.small
+
+      AmiType: AL2_x86_64
+      CapacityType: ON_DEMAND
+
+Outputs:
+
+  ClusterName:
+    Value: !Ref EKSCluster
+
+  ClusterArn:
+    Value: !GetAtt EKSCluster.Arn
+
+  VpcId:
+    Value: !Ref VPC
+
+  NodeGroup:
+    Value: !Ref EKSNodeGroup
