@@ -137,8 +137,49 @@ Resources:
           - !Ref PrivateSubnet1
           - !Ref PrivateSubnet2
 
+  # ==========================================================
+  # EKS ADDONS
+  # ==========================================================
+
+  VPCCNIAddon:
+    Type: AWS::EKS::Addon
+    Properties:
+      ClusterName: !Ref EKSCluster
+      AddonName: vpc-cni
+      ResolveConflicts: OVERWRITE
+
+  CoreDNSAddon:
+    Type: AWS::EKS::Addon
+    Properties:
+      ClusterName: !Ref EKSCluster
+      AddonName: coredns
+      ResolveConflicts: OVERWRITE
+
+  KubeProxyAddon:
+    Type: AWS::EKS::Addon
+    Properties:
+      ClusterName: !Ref EKSCluster
+      AddonName: kube-proxy
+      ResolveConflicts: OVERWRITE
+
+  EBSCSIAddon:
+    Type: AWS::EKS::Addon
+    Properties:
+      ClusterName: !Ref EKSCluster
+      AddonName: aws-ebs-csi-driver
+      ResolveConflicts: OVERWRITE
+
+  # ==========================================================
+  # EKS NODE GROUP
+  # ==========================================================
+
   EKSNodeGroup:
     Type: AWS::EKS::Nodegroup
+    DependsOn:
+      - VPCCNIAddon
+      - CoreDNSAddon
+      - KubeProxyAddon
+      - EBSCSIAddon
     Properties:
       ClusterName: !Ref EKSCluster
       NodeRole: arn:aws:iam::675344694125:role/eks-node-group-role
@@ -157,6 +198,9 @@ Resources:
 
       AmiType: AL2_x86_64
       CapacityType: ON_DEMAND
+
+
+
 
 Outputs:
 
