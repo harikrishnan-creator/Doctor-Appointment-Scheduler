@@ -88,7 +88,7 @@ spec:
     app: appointment-app
 
   ports:
-    - port: 3006
+    - port: 8080
       targetPort: 8080
       protocol: TCP
 
@@ -110,4 +110,4 @@ spec:
           service:
             name: appointment-app-service
             port:
-              number: 3006
+              number: 8080
